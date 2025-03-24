@@ -1,1 +1,1 @@
-# Intelligent-Resume-Screening-System-Project
+# AI-Powered Resume Parser
