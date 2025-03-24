@@ -4,14 +4,14 @@ This resume parser is designed to automate the recruitment process by evaluating
 
 The system connects to a PostgreSQL database, processes job listings and resumes, and computes the similarity between them using TF-IDF Vectorization and Cosine Similarity. The highest-ranked resume per job category is stored in the database for recruiter reference.
 
-#Key Features
+# Key Features
 - Context-aware NLP processing to filter out keyword-stuffing
 - TF-IDF Vectorization and Cosine Similarity for job-to-resume matching
 - Automated resume scoring (0 to 10) based on relevance
 - Database integration with PostgreSQL for structured storage
 - Efficient recruitment pipeline to streamline candidate shortlisting
 
-#How it Works
+# How it Works
 1. Extracts job listings and resumes from a PostgreSQL database
 2. Cleans & tokenizes the text using NLTK, removing stopwords and punctuation.
 3. Tags words with Part-of-Speech (POS) labels for context-based similarity matching.
@@ -20,7 +20,7 @@ The system connects to a PostgreSQL database, processes job listings and resumes
 6. Assigns a weighted score (0-10) to each resume based on relevance.
 7. Stores the highest-scoring resume per job category back into the database.
 
-#Tech Stack
+# Tech Stack
 1. Programming Langauge & Frameworks:
    - Python: Core language for building the resume parser
    - PostgreSQL: Database used to store job listings and resumes
