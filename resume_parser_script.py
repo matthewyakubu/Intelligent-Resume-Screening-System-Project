@@ -8,38 +8,38 @@ import psycopg2
 import string
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
+import unittest
 
 #initialize TF-IDF Vectorizer
 vectorizer = TfidfVectorizer(stop_words='english')
 
-#-------------------------
-# Function: clean_text(string)
-# Purpose is to convert text with special characters to plain ASCII.
-# Conversion is accomplished using the 'unicode' lib, and non-alphanumeric characters are removed using the 're' lib.
-#-------------------------
-def clean_text(text):
-    uncleaned_text = unidecode(text) #converts text with special characters to plain ASCII.
-    return re.sub(r'[^a-zA-Z0-9\s]', '', uncleaned_text)  # Removes all non-alphanumeric characters, then
-    # the 'filtered' string is returned.
+class Filter:
+    def __init__(self, text:str):
+        self.text = text
 
-#-------------------------
-# Function: extract_keywords(string)
-# Purpose is to tokenize parsed text and remove stopwords and punctuation from any data acquired from the PostgreSQL
-# database using psycopg2.
-#-------------------------
-def extract_keywords(text):
-    if not isinstance(text, str):  # Ensure text is a string
-        raise ValueError("Input to extract_keywords must be a string")
+    def clean_text(self):
+        uncleaned_text = unidecode(self.text)
+        cleaned_text = re.sub(r'[^a-zA-Z0-9\s]', '', uncleaned_text)
+        return cleaned_text
 
-    tokens = word_tokenize(text) # Tokenize the text passed into the function.
+    # -------------------------
+    # Function: extract_keywords(string)
+    # Purpose is to tokenize parsed text and remove stopwords and punctuation from any data acquired from the PostgreSQL
+    # database using psycopg2.
+    # -------------------------
+    def extract_keywords(self):
+        if not isinstance(self.text, str):  # Ensure that text is a string
+            raise ValueError("Input to extract_keywords must be a string")
 
-    stop_words = set(stopwords.words('english'))  # creates a set containing a list of common english stopwords
-    punctuation = set(string.punctuation) # creates a set containing a list of punctuation characters
+        tokens = word_tokenize(self.text)  # Tokenize the text passed into the function.
 
-    keywords = [word.lower() for word in tokens if word.lower() not in stop_words and word not in punctuation]
-    # any words that do not exist in either set will be made lower case and appended to the 'keywords' array
-    # the remaining words after this 'filter process' are the tokenized keywords that will be returned.
-    return keywords
+        stop_words = set(stopwords.words('english'))  # creates a set containing a list of common english stopwords
+        punctuation = set(string.punctuation)  # creates a set containing a list of punctuation characters
+
+        keywords = [word.lower() for word in tokens if word.lower() not in stop_words and word not in punctuation]
+        # any words that do not exist in either set will be made lower case and appended to the 'keywords' array
+        # the remaining words after this 'filter process' are the tokenized keywords that will be returned.
+        return keywords
 
 # Accessing the databases made using psycopg2 *Syntax below*
 try:
@@ -83,6 +83,7 @@ try:
 
     cur.execute('SELECT category, resume, id FROM resumes')
     rows = cur.fetchall()
+    print(rows)
 
     for resume_data in rows:
         clean_resume_data = re.sub(r'\\n+', '', resume_data[1])
@@ -96,7 +97,8 @@ try:
         # and punctuation characters when returning the list of keywords. Then we find the POS tags tied to the tokens,
         # and pair them before reconverting the list into a string for vectorization.
         #------------------------
-        keyword_description = extract_keywords(industry_job_dict[resume_data[0]])  # pass the job description into the extract_keywords function
+        job_filter = Filter(industry_job_dict[resume_data[0]])
+        keyword_description = job_filter.extract_keywords()  # pass the job description into the extract_keywords function
         description_pos = pos_tag(keyword_description) # POS tagging the tokenized job description
         description_merged_pos = ' '.join([f"{token}/{pos}" for token, pos in description_pos]) # converting the list of
         # tokens/POS tag pairs into a string
@@ -106,11 +108,11 @@ try:
         # list of strings, and data parsed using psycopg2 come in a list of tuples, so we join the data in order to
         # convert it into a vector.
         # ------------------------
-
-        keyword_resume_data = extract_keywords(clean_resume_data)
+        resume_filter_instance = Filter(clean_resume_data)
+        keyword_resume_data = resume_filter_instance.extract_keywords()
         db_pos = pos_tag(keyword_resume_data)
         resume_merged_pos = ' '.join([f"{token}/{pos}" for token, pos in db_pos])
-
+        # print(resume_merged_pos)
         vectorizer.fit([description_merged_pos, resume_merged_pos]) # fit the vectors together before transformation,
         # to ensure the vector dimensions are consistent in order to calculate cosine similarity.
 
@@ -127,6 +129,7 @@ try:
         cur.execute('UPDATE resumes SET resume_score = %s WHERE id = %s', (float(resume_score), resume_data[2]))
         # the resume scores are then entered into the resume database in the resume_score column which is identified
         # using the Primary Key (resume id) for the resumes table.
+        print(f'Resume Score #1: {resume_score}')
 
     # a list containing all the different job categories:
     cur.execute('SELECT industry FROM job_listings')
@@ -135,7 +138,6 @@ try:
     for cat in category: # iterate through the job categories
         if cat not in industry_list:
             industry_list.append("".join(cat)) # convert elements of the list from tuples to strings
-
 
     # we iterate through the list to assign the max resume paired with its score to enter into the job_listings table
     for ind in industry_list:
