@@ -13,7 +13,7 @@ import unittest
 #initialize TF-IDF Vectorizer
 vectorizer = TfidfVectorizer(stop_words='english')
 
-class Filter:
+class TextFilter:
     def __init__(self, text:str):
         self.text = text
 
@@ -83,7 +83,6 @@ try:
 
     cur.execute('SELECT category, resume, id FROM resumes')
     rows = cur.fetchall()
-    print(rows)
 
     for resume_data in rows:
         clean_resume_data = re.sub(r'\\n+', '', resume_data[1])
@@ -97,7 +96,7 @@ try:
         # and punctuation characters when returning the list of keywords. Then we find the POS tags tied to the tokens,
         # and pair them before reconverting the list into a string for vectorization.
         #------------------------
-        job_filter = Filter(industry_job_dict[resume_data[0]])
+        job_filter = TextFilter(industry_job_dict[resume_data[0]])
         keyword_description = job_filter.extract_keywords()  # pass the job description into the extract_keywords function
         description_pos = pos_tag(keyword_description) # POS tagging the tokenized job description
         description_merged_pos = ' '.join([f"{token}/{pos}" for token, pos in description_pos]) # converting the list of
@@ -108,7 +107,7 @@ try:
         # list of strings, and data parsed using psycopg2 come in a list of tuples, so we join the data in order to
         # convert it into a vector.
         # ------------------------
-        resume_filter_instance = Filter(clean_resume_data)
+        resume_filter_instance = TextFilter(clean_resume_data)
         keyword_resume_data = resume_filter_instance.extract_keywords()
         db_pos = pos_tag(keyword_resume_data)
         resume_merged_pos = ' '.join([f"{token}/{pos}" for token, pos in db_pos])
@@ -129,7 +128,6 @@ try:
         cur.execute('UPDATE resumes SET resume_score = %s WHERE id = %s', (float(resume_score), resume_data[2]))
         # the resume scores are then entered into the resume database in the resume_score column which is identified
         # using the Primary Key (resume id) for the resumes table.
-        print(f'Resume Score #1: {resume_score}')
 
     # a list containing all the different job categories:
     cur.execute('SELECT industry FROM job_listings')
