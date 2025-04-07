@@ -8,7 +8,6 @@ import psycopg2
 import string
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
-import unittest
 
 #initialize TF-IDF Vectorizer
 vectorizer = TfidfVectorizer(stop_words='english')
@@ -17,7 +16,13 @@ class TextFilter:
     def __init__(self, text:str):
         self.text = text
 
-    def clean_text(self):
+    # ----------------------
+    # Function: clean_text
+    # Purpose is to remove special characters as well as punctuation from any strings passed through the function,
+    # using the 're' library to set an excluding statement, to negate all characters that are not ASCII valued.
+    # ----------------------
+
+    def clean_text(self) -> str:
         uncleaned_text = unidecode(self.text)
         cleaned_text = re.sub(r'[^a-zA-Z0-9\s]', '', uncleaned_text)
         return cleaned_text
@@ -27,7 +32,7 @@ class TextFilter:
     # Purpose is to tokenize parsed text and remove stopwords and punctuation from any data acquired from the PostgreSQL
     # database using psycopg2.
     # -------------------------
-    def extract_keywords(self):
+    def extract_keywords(self) -> str:
         if not isinstance(self.text, str):  # Ensure that text is a string
             raise ValueError("Input to extract_keywords must be a string")
 
