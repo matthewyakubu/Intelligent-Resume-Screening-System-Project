@@ -32,7 +32,7 @@ class TextFilter:
     # Purpose is to tokenize parsed text and remove stopwords and punctuation from any data acquired from the PostgreSQL
     # database using psycopg2.
     # -------------------------
-    def extract_keywords(self) -> str:
+    def extract_keywords(self):
         if not isinstance(self.text, str):  # Ensure that text is a string
             raise ValueError("Input to extract_keywords must be a string")
 
@@ -46,19 +46,28 @@ class TextFilter:
         # the remaining words after this 'filter process' are the tokenized keywords that will be returned.
         return keywords
 
+    @staticmethod
+    def init_database():
+        password = os.getenv("SECRET_PASSWORD")  # for privacy
+
+        setup = psycopg2.connect(
+            dbname='postgres',
+            user='matthewyakubu',
+            password=password,
+            host='localhost',
+            port='5432'
+        )
+        return setup
+
+
 # Accessing the databases made using psycopg2 *Syntax below*
 try:
     # Establish a connection to the database we want to access on Postgres (port declaration is optional, 5432 is
     # the default port)
-    password = os.getenv("SECRET_PASSWORD") # for privacy
+    # password = os.getenv("SECRET_PASSWORD") # for privacy
+    conn = TextFilter('').init_database()
 
-    conn = psycopg2.connect(
-        dbname = 'postgres',
-        user = 'matthewyakubu',
-        password= password,
-        host='localhost',
-        port='5432'
-    )
+    # create a method for the stuff above (db connection)
 
     # To communicate with the database, we initialize a cursor
     cur = conn.cursor()
@@ -86,6 +95,7 @@ try:
 
     job_name_dict = {industry: job_name for industry, job_name, in job_names}
 
+    # cur.execute('SELECT category, resume, id FROM resumes ORDER BY id ASC LIMIT 1')
     cur.execute('SELECT category, resume, id FROM resumes')
     rows = cur.fetchall()
 
